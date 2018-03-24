@@ -1,0 +1,61 @@
+version: '3'
+services:
+  web:
+    build: web
+    depends_on:
+      - postgres
+      - minio1
+      - memcached
+    volumes:
+      - django-statics:/static
+    environment:
+      MINIO_ACCESS_KEY:
+      MINIO_SECRET_KEY:
+
+  nginx:
+      build: nginx
+      volumes:
+        - django-statics:/static
+      depends_on:
+        - web
+      ports:
+        - "80:80"
+
+  celery:
+    build: celery
+    depends_on:
+      - postgres
+      - minio1
+    environment:
+      MINIO_ACCESS_KEY:
+      MINIO_SECRET_KEY:
+
+  postgres:
+    image: postgres
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    deploy:
+      mode: global
+
+  redis:
+    image: "redis:alpine"
+
+  memcached:
+    image: memcached
+
+  minio1:
+    image: minio/minio
+    volumes:
+      - minio1-data:/data
+    environment:
+      MINIO_ACCESS_KEY:
+      MINIO_SECRET_KEY:
+    command: server /data
+    deploy:
+      mode: global
+
+volumes:
+  postgres-data:
+  minio1-data:
+  django-statics:
